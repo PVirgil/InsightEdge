@@ -19,7 +19,7 @@ client = Groq(api_key=GROQ_API_KEY)
 
 # Utility: call LLM
 
-def call_llm(prompt: str, model: str = "groq/llama-3.1-8b-instant") -> str:
+def call_llm(prompt: str, model: str = "groq/llama3‑8b‑8192") -> str:
     try:
         response = client.chat.completions.create(
             model=model,
