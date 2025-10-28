@@ -5,8 +5,8 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 from typing import Dict, Any
-import requests
 import logging
+from groq import Groq
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -14,34 +14,24 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
-HF_API_TOKEN = os.getenv("HF_API_TOKEN")
-HF_MODEL = os.getenv("HF_MODEL", "HuggingFaceH4/zephyr-7b-beta")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+client = Groq(api_key=GROQ_API_KEY)
 
 # Utility: call LLM
 
-def call_llm(prompt: str, model: str = HF_MODEL) -> str:
-    headers = {
-        "Authorization": f"Bearer {HF_API_TOKEN}"
-    }
-    json_data = {
-        "inputs": prompt,
-        "parameters": {
-            "max_new_tokens": 256,
-            "temperature": 0.7
-        }
-    }
-    resp = requests.post(
-        f"https://api-inference.huggingface.co/models/{model}",
-        headers=headers,
-        json=json_data
-    )
-    if resp.status_code != 200:
-        logger.error(f"LLM call error {resp.status_code}: {resp.text}")
-        return f"Error: {resp.status_code} {resp.text}"
-    data = resp.json()
-    if isinstance(data, list) and len(data) > 0 and 'generated_text' in data[0]:
-        return data[0]['generated_text']
-    return str(data)
+def call_llm(prompt: str, model: str = "llama3-8b-8192") -> str:
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a business analyst AI."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        logger.error(f"LLM call failed: {e}")
+        return f"Error: {e}"
 
 # Modules / logic
 
@@ -165,3 +155,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
